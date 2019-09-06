@@ -1,0 +1,840 @@
+﻿<!DOCTYPE html>
+<html style="height: 100%;">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/img/icon.png" type="image/x-icon">
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" type="text/css" href="css/loader.css">
+    <title>布匹瑕疵识别</title>
+</head>
+<body style="margin: 0px;height: 100%;" >
+<script type="text/javascript" src="js/echarts.min.js"></script>
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui@2.8.2/lib/index.js"></script>
+<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+<script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+<div id="app" style="height: 100%;">
+    <el-container style="height: 100%">
+        <el-header style="height: 10%;border-bottom:1px solid;border-color: rgba(220, 220, 220, 0.8)" >
+            <el-image src="img/logo.png" fit="fill" style="height: 100%;width:20%;cursor:pointer;" @click.native="isColl"></el-image>         
+            <el-image style="width: 50px; height: 50px;border-radius:50%;overflow: hidden;float:right;top: 10px;cursor:pointer;margin-right: 15px" @click.native="welcome" src="img/default.jpg"></el-image>
+        </el-header>
+        <el-container style="height: 93%">
+            <el-aside v-bind:style="{width: asideWidth}" class="aside">
+            <!--<el-aside v-bind:style="{width: asideWidth}" class="aside">-->
+                <el-menu :default-active="activeIndex" class="el-menu-vertical-demo"  :collapse="isCollapse" style="height: 100%">
+                    <el-menu-item index="1" @click.native="activeIndex='1'" style="font-size: 20px;height: 70px;vertical-align: middle">
+                        <i class="el-icon-document-remove"></i>
+                        <span slot="title">单张处理</span>
+                      </el-menu-item>
+                    <el-menu-item index="2" @click.native="activeIndex='2'" style="font-size: 20px;height: 70px;vertical-align: middle">
+                      <i class="el-icon-document-copy"></i>
+                      <span slot="title" >批量处理</span>
+                    </el-menu-item>
+                    <el-menu-item index="3" @click.native="activeIndex='3'" style="font-size: 20px;height: 70px;vertical-align: middle">
+                        <i class="el-icon-setting"></i>
+                        <span slot="title">使用说明</span>
+                      </el-menu-item>
+                    <el-menu-item index="4" @click.native="activeIndex='4'" style="font-size: 20px;height: 70px;vertical-align: middle">
+                      <i class="el-icon-user"></i>
+                      <span slot="title">关于我们</span>
+                    </el-menu-item>
+                </el-menu>
+            </el-aside>
+            <el-main style="height: 100%"  >
+                <div v-if="activeIndex==='1'" style="height: 100%">
+                    <div style="height: 1%"></div>
+                    <div><el-card style="width:95%;margin:0 auto;padding-left: 40px"><h1>处理单张图片</h1></el-card></div>
+                    <div style="height: 3%"></div>
+                    <div>
+                        <el-card style="width:95%;margin:0 auto;padding-left: 40px">
+                            <div>
+                                <el-row style="height: 5px"></el-row>
+                                <el-row>
+                                    <el-col :span="7" :offset="3">
+                                            <el-upload class="upload-demo" drag action="upload.php" :show-file-list="false" :on-success="handleAvatarSuccess" :before-upload="beforeAvatarUpload">
+                                            <i class="el-icon-upload"></i>
+                                            <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                                            <div class="el-upload__text" style="font-size: 10px">只能上传jpg/png文件，且不超过10MB</div>
+                                          </el-upload>
+                                    </el-col>
+                                    <el-col :span="8" :offset="3"> 
+                                        <el-row style="height:30px"></el-row>
+                                        <el-row>
+                                            <div class="block">
+                                                <span class="demonstration">阈值</span>
+                                                <el-slider v-model="singleCon" :format-tooltip="formatTooltip"></el-slider>
+                                            </div>
+                                        </el-row>
+                                        <el-row style="height:30px"></el-row>
+                                        <el-row>
+                                            <el-button type="primary" round @click="singleFun">检测<i class="el-icon-search"></i></el-button>
+                                            <el-button type="primary" round @click="singleRe">重置<i class="el-icon-refresh-right"></i></el-button>
+                                        </el-row>
+                                    </el-col>
+                                </el-row>
+                                <el-row style="height: 5px"></el-row>
+                            </div>
+                        </el-card>
+                    </div>
+                    <div style="height:3%"></div>
+                    <div>
+                        <el-card style="width:95%;margin:0 auto;padding-left: 40px">
+                            <div>
+                                <el-row style="height:20px"></el-row>
+                                <el-row>
+                                    <el-col :span="8" :offset="2">
+                                        <el-card :body-style="{ padding: '0px' }">                   
+                                            <el-popover
+                                                placement="right"
+                                                title=""
+                                                trigger="hover" v-if="singleUrl">
+                                                <img :src="singleUrl" class="image" v-if="singleUrl"/>          
+                                                <img class="image" slot="reference" :src="singleUrl" :alt="singleUrl" >
+                                            </el-popover>
+                                            <i v-else class="el-icon-picture-outline"></i>
+                                            <!--
+                                            <img :src="singleUrl" class="image" v-if="singleUrl">
+                                            <i v-else class="el-icon-picture-outline"></i>-->
+                                            <div style="padding: 10px;text-align: center">
+                                                <span style="font-size: 20px;">初始图片</span>
+                                            </div>
+                                        </el-card>
+                                    </el-col>
+                                    <el-col :span="8" :offset="3">
+                                        <el-card :body-style="{ padding: '0px' }">
+                                                <el-popover
+                                                placement="right"
+                                                title=""
+                                                trigger="hover" v-if="singleResUrl">
+                                                <img :src="singleResUrl" class="image" v-if="singleResUrl"/>          
+                                                <img class="image" slot="reference" :src="singleResUrl" :alt="singleResUrl" >
+                                            </el-popover>
+                                            <i v-else class="el-icon-picture-outline"></i>                                           
+                                            <!--
+                                            <img :src="singleResUrl" class="image" v-if="singleResUrl">
+                                            <i v-else class="el-icon-picture-outline"></i>-->
+                                            <div style="padding: 10px;text-align: center">
+                                                <span style="font-size: 20px;">结果图片</span>
+                                            </div>
+                                        </el-card>
+                                    </el-col>
+                                </el-row>
+                                <el-row style="height:30px"></el-row>
+                                <el-row>
+                                    <el-col :span="19" :offset="2">
+                                        <el-card>
+                                            <el-row>
+                                                <p style="font-size: 20px;">检测结果：</p>                                               
+                                            </el-row>
+                                            <div v-for="(value,index) in singleResList.slice((ScurrentPage- 1)*Spagesize,ScurrentPage*Spagesize)"  >
+                                                <div>
+                                                    <el-row>
+                                                        <el-col :span="6"><p style="font-size: 15px;">瑕疵种类：{{value.label}}</p></el-col>
+                                                        <el-col :span="6"><p style="font-size: 15px;">瑕疵坐标：({{value.x}},{{value.y}})</p></el-col>
+                                                        <el-col :span="6"><p style="font-size: 15px;">瑕疵长宽：({{value.wid}},{{value.hei}})</p></el-col>
+                                                        <el-col :span="6"><p style="font-size: 15px;">瑕疵置信度：{{value.con}}</p></el-col>                                              
+                                                    </el-row>
+                                                </div>
+                                                <el-divider></el-divider>                      
+                                            </div>
+                                            <el-pagination layout="prev, pager, next" :page-size="Spagesize"  :current-page="ScurrentPage" :pager-count="5" 
+                                                @current-change="handleCurrentChange" :total="singleResList.length"
+                                                > 
+                                            </el-pagination>
+                                        </el-card>
+                                    </el-col>
+                                    
+                                </el-row>
+                            </div>
+                        </el-card>
+                    </div>
+                    <div style="height:3%"></div>
+                    <div >
+                        <el-card style="width:95%;margin:0 auto;padding-left: 40px">
+                            <div style="margin: 0 auto;">   
+                                <el-row style="height:10px"></el-row>
+                                <el-row><p style="font-size:25px;margin-left: 20px">数据统计：</p></el-row>
+                                <el-row style="height:15px"></el-row>
+                                <el-row style="margin: 0 auto;text-align: center">
+                                    <div  style="width:90%;height: 500px;margin: 0 auto" ref="mychartS"> </div>
+                                </el-row>
+                            </div>
+                        </el-card>
+                    </div>
+                    <div style="height:3%"></div>
+                </div>
+                <div v-if="activeIndex==='2'" style="height: 100%" v-loading.fullscreen="loading" element-loading-text="检测中...">
+                    <div style="height: 1%"></div>
+                    <div><el-card style="width:95%;margin:0 auto;padding-left: 40px"><h1>处理批量图片</h1></el-card></div>
+                    <div style="height: 3%"></div>
+                    <div>
+                        <el-card style="width:95%;margin:0 auto;padding-left: 40px">
+                            <div>
+                                    <el-row style="height: 5px"></el-row>
+                                <el-row>
+                                    <el-col :span="7" :offset="3">
+                                            <el-upload class="upload-demo" :limit="100" drag action="Mupload.php" :show-file-list="false" :on-success="MhandleAvatarSuccess"  multiple :before-upload="MbeforeAvatarUpload">
+                                            <i class="el-icon-upload"></i>
+                                            <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                                            <div class="el-upload__text" style="font-size: 10px">只能上传jpg/png文件，且不超过10MB</div>
+                                            <div class="el-upload__tip" slot="tip">已上传{{Mlist}}张图片</div>
+                                          </el-upload>
+                                    </el-col>
+                                    <el-col :span="8" :offset="3"> 
+                                        <el-row style="height:30px"></el-row>
+                                        <el-row>
+                                            <div class="block">
+                                                <span class="demonstration">阈值</span>
+                                                <el-slider v-model="MCon" :format-tooltip="formatTooltip"></el-slider>
+                                            </div>
+                                        </el-row>
+                                        <el-row style="height:30px"></el-row>
+                                        <el-row>
+                                            <el-button type="primary" round @click="MFun">检测<i class="el-icon-search"></i></el-button>
+                                            <el-button type="primary" round @click="MRe">重置<i class="el-icon-refresh-right"></i></el-button>
+                                        </el-row>
+                                    </el-col>
+                                </el-row>
+                                <el-row style="height: 5px"></el-row>
+                            </div>
+                        </el-card>
+                    </div>
+                    <div style="height:3%"></div>
+                    <div>
+                        <el-card style="width:95%;margin:0 auto;padding-left: 40px">
+                            <div>
+                                
+                                <el-row style="height:10px"></el-row>
+                                <el-row><p style="font-size:25px;margin-left: 20px">检测结果：</p></el-row>
+                                <el-row style="height:15px"></el-row>
+                                    <el-row>
+                                        
+                                        <div v-for="(value,index) in MResList.slice((McurrentPage- 1)*Mpagesize,McurrentPage*Mpagesize)"  >
+                                        
+                                            <el-col :span="4" :offset="1">
+                                            <el-card :body-style="{ padding: '0px' }">
+                                                <img :src="value[0].rURL" class="image" v-if="value[0].rURL" @click="checkPic(index)" style="cursor:pointer;">
+                                                <i v-else class="el-icon-picture-outline" style="height:200px;line-height: 200px;"  ></i>
+                                                <div style="padding: 10px;text-align: center">
+                                                    <div style="font-size: 16px;padding-bottom: 5px">{{value[0].pName}}</div>
+                                                    <div style="font-size: 18px;">瑕疵:{{value[0].label}}</div>
+                                                </div>
+                                            </el-card>
+                                        </el-col>
+                                        <el-col :span="1" ><p style="font-size: 1px">.</p></span></el-col>
+                                        </div>
+
+                                    </el-row>
+                                    <el-divider></el-divider>  
+                                    <el-row>
+                                            <el-pagination layout="prev, pager, next" :page-size="Mpagesize"  :current-page="McurrentPage" :pager-count="5" 
+                                            @current-change="MhandleCurrentChange" :total="MResList.length" style="margin-left:40px"                    
+                                            > 
+                                        </el-pagination>
+                                    </el-row>
+                                
+                            </div>
+                        </el-card>
+                    </div>
+                    <div style="height:3%"></div>
+                    <div >
+                        <el-card style="width:95%;margin:0 auto;padding-left: 40px">
+                            <div>   
+                                <el-row style="height:10px"></el-row>
+                                <el-row><p style="font-size:25px;margin-left: 20px">数据统计：</p></el-row>
+                                <el-row style="height:15px"></el-row>
+                                <el-row >
+                                    <div  style="width:90%;height: 500px;margin: 0 auto" ref="mychartT"> </div>
+                                    
+                                </el-row>
+                                <el-row style="height:15px"></el-row>
+                                <el-row>
+                                    <div  style="width:90%;height: 500px;margin: 0 auto" ref="mychartB"> </div>
+                                </el-row>
+                            </div>
+                        </el-card>
+                    </div>
+                    <div style="height:3%"></div>
+                </div>
+                <div v-if="activeIndex==='3'" style="height: 100%">
+                    <div style="height: 1%"></div>
+                    <div style=>
+                        <el-card style="width:95%;margin:0 auto;padding-left: 40px">
+                            <el-row><h1 >处理单张图片</h1></el-row>
+                            <el-row>
+                                <p>1.首先上传一张需要检测的布匹图片，上传成功后会显示在网页左侧(图片名称不能含有中文)</p>
+                                <p>2.拉动滑块选择阈值，改变检测精度</p>
+                                <p>3.点击检测按钮，检测之后的图片会显示在网页右侧</p>
+                                <p>4.瑕疵信息会显示在检测结果图片下方，包含瑕疵种类，瑕疵位置（左上角顶点坐标）,瑕疵范围（坐标对分别表示宽，高），瑕疵置信度</p>
+                                <p>5.点击重置按可以重置本页面</p>
+                            </el-row>
+                        </el-card>
+                    </div>
+                    <div style="height: 3%"></div>
+                    <div style=>
+                        <el-card style="width:95%;margin:0 auto;padding-left: 40px">
+                            <el-row><h1 >处理批量图片</h1></el-row>
+                            <el-row>
+                                <p>1.首先上传所有需要检测的布匹图片，上传成功后图片数量会显示在上传框下方(图片名称不能含有中文)</p>
+                                <p>2.拉动滑块选择阈值，改变检测精度</p>
+                                <p>3.点击检测按钮，检测之后的图片及主要瑕疵种类会显示在网页下侧</p>
+                                <p>4.点击图片可以查看改布匹的大图以及具体瑕疵信息，包含瑕疵种类，瑕疵位置（左上角顶点坐标）,瑕疵范围（坐标对分别表示宽，高），瑕疵置信度</p>
+                                <p>5.瑕疵统计信息会显示在检测结果图片下方，包括一张条形图以及一张饼状图</p>
+                                <p>5.点击重置按可以重置本页面，在重置或刷新页面之前无法重新上传图片</p>
+                            </el-row>
+                        </el-card>
+                    </div> 
+                    <div style="height: 3%"></div>                   
+                </div>
+                <div v-if="activeIndex==='4'" style="height: 100%">
+                    <div style="height: 1%"></div>
+                    <div>
+                        <el-card style="width:95%;margin:0 auto;height: 100%;font-size: 25px;padding-left: 40px" >
+                            <h1> 开发团队：练习时长两年半的马猴烧酒可带劲啦</h1>
+                            <p style="color: #999;font-size: 20px">北京航空航天大学</p>
+                        </el-card>                    
+                    </div>
+                    <div style="height:3%"></div>
+                    <div>
+                        <el-card style="width:95%;margin:0 auto;padding-left: 40px">
+                            <h1 style="font-size: 25px;">团队成员：</h1>
+                            <el-row>
+                                <el-col :span="5" :offset="2">
+                                    <el-card :body-style="{ padding: '0px' } " >
+                                    <img src="img/wjq.jpg" class="image">
+                                    <div style="padding: 10px;text-align: center">
+                                        <span style="font-size: 18px;">队长：xxx</span>
+                                        <div class="bottom clearfix">
+                                        <p style="font-size: 14px;color: #999;">开发管理，架构设计</p>
+                                        </div>
+                                    </div>
+                                    </el-card>
+                                </el-col>
+                                <el-col :span="5" :offset="2">
+                                    <el-card :body-style="{ padding: '0px' }">
+                                    <img src="img/lw.jpg" class="image">
+                                    <div style="padding: 10px;text-align: center">
+                                        <span style="font-size: 18px;">队员：xxx</span>
+                                        <div class="bottom clearfix">
+                                        <p style="font-size: 14px;color: #999;">算法研发，模型训练</p>
+                                        </div>
+                                    </div>
+                                    </el-card>
+                                </el-col>
+                                <el-col :span="5" :offset="2">
+                                    <el-card :body-style="{ padding: '0px' }">
+                                    <img src="img/lgh.jpg" class="image">
+                                    <div style="padding: 10px;text-align: center">
+                                        <span style="font-size: 18px;">队员：xxx</span>
+                                        <div class="bottom clearfix">
+                                        <p style="font-size: 14px;color: #999;">界面设计，美术优化</p>
+                                        </div>
+                                    </div>
+                                    </el-card>
+                                </el-col>
+                            </el-row>
+                            <el-row style="height:10px"></el-row>
+                        </el-card>
+                    </div>
+                    <div style="height:3%"></div>
+              </div>
+            
+            </el-main>
+        </el-container>
+      </el-container>
+
+      <el-dialog
+        :title="MResList[Dcnt][0].pName"
+        :visible.sync="dialogVisible"
+        width="40%"
+        top="2vh"
+        :lock-scroll="false"
+        >
+        <span>
+            <div style="width: 100%">
+                <el-row>
+                    <div style="width:90%;margin:0 auto">
+                    <el-image style="display:block" :src="MResList[Dcnt][0].rURL"  fit="fill"></el-image></div>
+                </el-row>
+                <el-row style="height: 8px"></el-row>
+                <el-row>
+                        <p style="font-size: 20px;">检测结果：</p>                                               
+                </el-row>
+                    <div v-for="(value,index) in MResList[Dcnt].slice((DcurrentPage- 1)*Spagesize,DcurrentPage*Dpagesize)"  >
+                        <div>
+                            <el-row>
+                                <el-col :span="6"><p style="font-size: 15px;">瑕疵种类：{{value.label}}</p></el-col>
+                                <el-col :span="6"><p style="font-size: 15px;">瑕疵坐标：({{value.x}},{{value.y}})</p></el-col>
+                                <el-col :span="6"><p style="font-size: 15px;">瑕疵长宽：({{value.wid}},{{value.hei}})</p></el-col>
+                                <el-col :span="6"><p style="font-size: 15px;">瑕疵置信度：{{value.con}}</p></el-col>                                              
+                            </el-row>
+                        </div>                    
+                    </div>
+                    <el-divider></el-divider> 
+                    <el-pagination layout="prev, pager, next" :page-size="Dpagesize"  :current-page="DcurrentPage" :pager-count="5" 
+                        @current-change="DhandleCurrentChange" :total="MResList[Dcnt].length"                     
+                        > 
+                    </el-pagination>
+            </div>
+        </span>
+        <span slot="footer" class="dialog-footer">
+            <el-button-group >
+                <el-button type="primary" icon="el-icon-arrow-left" @click="checkBefore">上一页</el-button>
+                <el-button type="primary" @click="dialogVisible=false">确 定</el-button>
+                <el-button type="primary" @click="checkAfter">下一页<i class="el-icon-arrow-right el-icon--right" ></i></el-button>
+            </el-button-group>
+            
+        </span>
+    </el-dialog>
+
+</div>
+<!--加载动画-->
+<div id="sys-loading" class=""><div class="spinner">
+  <div class="loader-inner line-scale-pulse-out-rapid">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+  </div>
+  </div></div>
+</body>
+<style>
+  .el-carousel__item h3 {
+    color: #475669;
+    font-size: 14px;
+    opacity: 0.75;
+    line-height: 150px;
+    margin: 0;
+  }
+
+  .el-carousel__item:nth-child(2n) {
+     background-color: #99a9bf;
+  }
+  
+  .el-carousel__item:nth-child(2n+1) {
+     background-color: #d3dce6;
+  }
+    body::-webkit-scrollbar {
+        width: 0px;
+    }
+  .el-main {
+    /*background-color: #E9EEF3;*/
+    background-color: #f8f9fa
+  }
+
+  .aside {
+      box-shadow:1px 0 20px rgba(0, 0, 0, 0.08);
+      margin-right: 4px
+  }
+  .image{
+    width: 100%;
+    display: block;
+  }
+
+  .el-menu-vertical-demo:not(.el-menu--collapse) {
+    width: 260px;
+    min-height: 400px;
+  }
+
+  .clearfix:before,
+  .clearfix:after {
+      display: table;
+      content: "";
+  }
+  
+  .clearfix:after {
+      clear: both
+  }
+  
+  .el-icon-picture-outline {
+    font-size: 40px;
+    color: #8c939d;
+    text-align: center;
+    line-height: 300px;
+    display: block;
+    height: 300px;
+  }
+</style>
+<script>
+    document.onreadystatechange = subSomething;
+    function subSomething() {
+        //当页面加载状态
+        if (document.readyState == "complete") {
+            //延迟一秒关闭loading
+            $('#sys-loading').delay(200).hide(0);
+            $('.spinner').delay(200).fadeOut('slow');
+        }
+    }
+    var vm = new Vue({
+        el: '#app',
+        data(){
+            return {
+                isCollapse: true,
+                asideWidth:261,
+                activeIndex:"1",
+                dialogVisible:false,
+                loading:false,
+
+                chartT:null,
+                chartB:null,
+                ChxcKey:['未检测到瑕疵', '停车痕(紧)', '油污', '断经', '折返', '错花','糙纬','停车痕(松)','浆斑','缩纬','并纬','断纬','皱印','缺纬','机械段','散边(边不良)','擦伤','疵点开剪','浆扣路','下首紧纬','小布','隐档','擦白','短纬','断纤纬','紧经','经条','空织','筘路','宽急经','破洞','污经','原料档','砸伤','脏污（锈斑）','组织错误'],
+                EnxcKey:['0','tch_j','yw','dj','zf','ch','cw','tch_s','jb','sw','bw','dw_break','zy','qw','jxd','sb','cs','cdkj','jkl','xsjw','xb','yd','cb','dw_short','dqw','jj','jt','kz','kl','kjj','pd','wj','yld','zs','zb','zzcw'],
+                chartKey:['无检测图片'],
+                chartValue:[0],
+                BcValue:[{value:0,name:'无检测图片'}],
+                //testChart:[],
+                chartS:null,
+                Sdata:[],
+                Svalue:[],
+
+                Dcnt:0,
+                DcurrentPage:1,
+                Dpagesize:3,
+
+                ScurrentPage:1,
+                Spagesize:3,
+
+                singleUrl: '',
+                singleFileName:'',
+                singleCon:15,
+                singleResUrl:"",
+                singleUpFlag:false,
+
+                singleResList:[{'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+
+                MCon:15,
+                McurrentPage:1,
+                Mpagesize:4,
+                MfilePath:"img/m/",
+                MUpFlag:false,
+
+                Mlist:0,
+                onlyTest:[[{'pName':"test1.jpg",'rURL':"/img/m/1.jpg",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"test2.jpg",'rURL':"/img/m/2.jpg",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"test3.jpg",'rURL':"/img/m/3.jpg",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"test4.jpg",'rURL':"/img/m/4.jpg",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00},{'pName':"test4",'rURL':"/img/m/4.jpg",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"test5.jpg",'rURL':"/img/m/5.jpg",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],],
+                MResList:[[{'pName':"待上传",'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"待上传",'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"待上传",'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"待上传",'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"待上传",'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],],
+            };
+        },
+        updated(){
+            if(this.activeIndex==="2")
+                this.initchart();
+            if(this.activeIndex==="1")
+                this.Sinitchart();  
+        },
+        mounted() {
+                this.Sinitchart(); 
+
+        },
+        created() {       
+            this.$http.post('clear.php',{emulateJSON:true} ).then(       
+                    function(res){
+                        this.$message("数据已清除")
+                    },
+                    function(res){console.log(res.status);}
+                );
+        },
+        methods:{
+            initchart:function(){
+                this.chartT=echarts.init(this.$refs.mychartT);
+                this.chartT.setOption({
+                    title : {
+                        text: '布匹瑕疵检测结果',
+                        subtext: '条形图',
+                        x:'center'
+                    },
+                        xAxis: {
+                            type: 'category',
+                            data: this.chartKey
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        tooltip : {
+                        trigger: 'item',
+                        formatter: "{a} : {c}"
+                    },
+                        series: [{
+                            name:'瑕疵数量',
+                            data: this.chartValue,
+                            type: 'bar'
+                        }]
+                })
+
+                this.chartB=echarts.init(this.$refs.mychartB);
+                this.chartB.setOption({
+                    title : {
+                        text: '布匹瑕疵检测结果',
+                        subtext: '饼状图',
+                        x:'center'
+                    },
+                    tooltip : {
+                        trigger: 'item',
+                        formatter: "{a} <br/>{b} : {c} ({d}%)"
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left',
+                        data: this.chartKey
+                    },
+                    series : [
+                        {
+                            name: '瑕疵比例',
+                            type: 'pie',
+                            radius : '55%',
+                            center: ['50%', '60%'],
+                            data:this.BcValue,
+                            itemStyle: {
+                                emphasis: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }
+                    ]
+                })
+                //end
+            },
+            Sinitchart:function(){
+                this.Sdata=[]
+                this.Svalue=[]
+                for(item in this.singleResList){
+                    this.Sdata.push(this.singleResList[item].label)
+                    this.Svalue.push(this.singleResList[item].con)
+                }
+                this.chartT=echarts.init(this.$refs.mychartS);
+                this.chartT.setOption({
+                    title : {
+                        text: '布匹瑕疵检测结果',
+                        subtext: '置信度',
+                        x:'center'
+                    },
+                        xAxis: {
+                            type: 'category',
+                            data: this.Sdata
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        tooltip : {
+                        trigger: 'item',
+                        formatter: "{a} : {c}"
+                    },
+                        series: [{
+                            name:'置信度',
+                            data: this.Svalue,
+                            type: 'bar'
+                        }]
+                })
+            },
+            checkPic(index){
+                this.DcurrentPage=1;
+                this.Dcnt=(this.McurrentPage- 1)*this.Mpagesize+index
+                this.dialogVisible=true
+            },
+            checkBefore(){
+                this.Dcnt=((this.Dcnt-1)+this.MResList.length)%this.MResList.length
+                this.DcurrentPage=1;
+            },
+            checkAfter(){
+                this.Dcnt=((this.Dcnt+1)+this.MResList.length)%this.MResList.length
+                this.DcurrentPage=1;
+            },
+            isColl:function(){
+                this.isCollapse=!this.isCollapse
+            },
+            handleCurrentChange(currentPage){  //改变当前页
+                this.ScurrentPage = currentPage
+            },
+            MhandleCurrentChange(currentPage){  //改变当前页
+                this.McurrentPage = currentPage
+            },
+            DhandleCurrentChange(currentPage){  //改变当前页
+                this.DcurrentPage = currentPage
+            },
+            welcome:function(){
+              this.$notify({
+                title: 'Welcome',
+                message: '欢迎使用布匹瑕疵识别系统',
+                type: 'success',
+                 offset: 60
+              });
+            },
+
+            handleAvatarSuccess(res, file) {
+                this.singleUrl = URL.createObjectURL(file.raw);
+                this.singleFileName='img/ex/'+file.name
+                this.singleUpFlag=true
+                this.singleResUrl=""
+                this.singleResList=[{'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}]
+            },
+            MhandleAvatarSuccess(res, file){
+                this.MUpFlag=true
+                this.$message("上传完成")
+            },
+            MbeforeAvatarUpload(file) {
+                if(this.MUpFlag==true){
+                    this.$message("请先重置后再进行上传")
+                    return false
+                }
+                const isJPG = file.type === 'image/jpeg';
+                const isPNG = file.type === 'image/png';
+                const isLt2M = file.size / 1024 / 1024 < 10;
+                this.Mlist+=1
+
+                if (!isJPG&&!isPNG) {
+                this.$message.error('上传头像图片只能是 JPG/PNG 格式!');
+                }
+                if (!isLt2M) {
+                this.$message.error('上传头像图片大小不能超过 10MB!');
+                }
+                //console.log((isJPG||isPNG) && isLt2M)
+                return (isJPG||isPNG) && isLt2M;
+            },
+            singleRe(){
+                this.singleUpFlag=false
+                this.singleResUrl=""
+                this.singleFileName=""
+                this.singleUrl=""
+                this.singleResList=[{'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}]
+                this.Sinitchart(); 
+                this.Sdata=[]
+                this.Svalue=[]
+            },
+            MRe(){
+                this.MUpFlag=false
+                this.Mlist=0
+                this.Dcnt=0
+                this.chartValue=[0]
+                this.chartKey=["无检测图片"]
+                this.BcValue=[{value:0,name:'无检测图片'}]
+                this.MResList=[[{'pName':"待上传",'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"待上传",'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"待上传",'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"待上传",'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],
+                        [{'pName':"待上传",'rURL':"",'label':'无检测图片','x':0,'y':0,'wid':0,'hei':0,'con':0.00}],]
+                this.initchart()
+                                    
+                this.$http.post('clear.php',{emulateJSON:true} ).then(       
+                    function(res){
+                        
+                    },
+                    function(res){console.log(res.status);}
+                );
+                this.$message("数据已重置")
+            },
+            beforeAvatarUpload(file) {
+                const isJPG = file.type === 'image/jpeg';
+                const isPNG = file.type === 'image/png';
+                const isLt2M = file.size / 1024 / 1024 < 10;
+
+                if (!isJPG&&!isPNG) {
+                this.$message.error('上传头像图片只能是 JPG/PNG 格式!');
+                }
+                if (!isLt2M) {
+                this.$message.error('上传头像图片大小不能超过 10MB!');
+                }
+                return (isJPG||isPNG) && isLt2M;
+            },
+            formatTooltip(val) {
+                return val / 100;
+            },
+            singleFun(){
+                //this.$message("检测完成")
+                if(this.singleUpFlag==false){
+                    this.$message("未上传图片")
+                    return 
+                }    
+                str="http://localhost:5000/single?confident="+this.formatTooltip(this.singleCon)+"&img_path="+this.singleFileName
+                    
+                this.$http.post('detactor.php',{Url:str},{emulateJSON:true} ).then(       
+                    function(res){
+                        this.singleResUrl=''
+                        this.singleResList=res.body
+                        
+                        for(k in this.singleResList)
+                        {
+                            this.singleResList[k].label=this.xcFormat(this.singleResList[k].label)
+                            
+                        }
+                        this.singleResUrl=res.body[0].rURL+'?t='+Math.random()
+                        this.Sinitchart(); 
+                        this.$message("检测完成")
+                    },
+                    function(res){console.log(res.status);}
+                );
+                
+            },
+            MFun(){
+                if(this.MUpFlag==false){
+                    this.$message("未上传图片")
+                    return 
+                }   
+                //测试代码
+                //this.MUpFlag=true
+                str="http://localhost:5000/multi?confident="+this.formatTooltip(this.MCon)+"&img_path="+this.MfilePath
+                this.loading=true
+                this.$http.post('detactor.php',{Url:str},{emulateJSON:true} ).then(       
+                    function(res){
+                        this.MResList=res.body
+                        for(u in this.MResList)
+                        {
+                            for(y in this.MResList[u])
+                            {
+                                this.MResList[u][y].label=this.xcFormat(this.MResList[u][y].label)
+                            }
+                            
+                        }
+                        //this.singleResUrl=res.body[0].rURL+'?t='+Math.random()
+                        this.$http.post('detactor.php',{Url:'http://localhost:5000/tongji'},{emulateJSON:true} ).then(       
+                            function(re){
+                                this.BcValue=[]
+                                this.chartKey=re.body[0]
+                                this.chartValue=re.body[1]
+                                for(j in this.chartKey)
+                                {
+                                    this.chartKey[j]=this.xcFormat(this.chartKey[j])
+                                    this.BcValue.push({value:this.chartValue[j],name:this.chartKey[j]})
+                                }
+                                
+                                this.initchart(); 
+                            },
+                            function(re){console.log(res.status);}
+                        );
+                        this.loading=false
+                        this.$message("检测完成")
+                    },
+                    function(res){console.log(res.status);}
+                );
+
+                //请求检测并获取信息
+                //this.MResList=this.onlyTest
+
+                //生成图表（异步问题注意一下）
+                //this.chartValue=this.testChart
+                //this.initchart(); 
+            },
+            xcFormat(str){
+                for(i in this.EnxcKey)
+                {
+                    if(str===this.EnxcKey[i])
+                    {
+                        return this.ChxcKey[i]
+                    }
+                }
+                return '未检测到瑕疵'
+            }
+        }
+    })
+</script>
+
+</html>
